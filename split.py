@@ -56,13 +56,12 @@ def split(img, begin_x=0, begin_y=0, h=512, w=512, step=50):
 
 
 if __name__ == '__main__':
-    # mask1 = cv2.imread('1-m.tif')
-    # split(process(mask1))
+    path = './raw/img/'
+    for each in os.listdir(path):
+        img = cv2.imread(os.path.join(path, each))
+        split(img)
 
-    img = cv2.imread('1.tif')
-    split(img)
-
-    # path = './data/mask/'
+    # path = './raw/mask/'
     # for each in os.listdir(path):
-    #     mask = cv2.imread(os.path.join(path, each))
-    #     split(mask)
+    #     img = cv2.imread(os.path.join(path, each))
+    #     split(process(img))
