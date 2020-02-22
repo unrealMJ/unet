@@ -89,6 +89,8 @@ class Solver(object):
         with torch.no_grad():
             for i, (imgs, masks) in enumerate(self.val_loader):
                 imgs, masks = imgs.to(self.device), masks.to(self.device)
+                imgs = imgs.float()
+                masks = masks.long()
                 output = self.model(imgs)
                 loss = self.criterion(output, masks)
                 loss_tol += loss.item()
@@ -119,9 +121,9 @@ class Solver(object):
 def main():
     parser = argparse.ArgumentParser(description="cifar-10 with PyTorch")
     parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
-    parser.add_argument('--epoch', default=200, type=int, help='number of epochs tp train for')
-    parser.add_argument('--train_batch_size', default=100, type=int, help='training batch size')
-    parser.add_argument('--val_batch_size', default=100, type=int, help='testing batch size')
+    parser.add_argument('--epoch', default=20, type=int, help='number of epochs tp train for')
+    parser.add_argument('--train_batch_size', default=2, type=int, help='training batch size')
+    parser.add_argument('--val_batch_size', default=1, type=int, help='testing batch size')
     parser.add_argument('--cuda', default=torch.cuda.is_available(), type=bool, help='whether cuda is in use')
     args = parser.parse_args()
 
