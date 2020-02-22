@@ -92,12 +92,8 @@ class Solver(object):
                 loss = self.criterion(output, masks)
                 loss_tol += loss.item()
 
-                # pred = torch.max(output, 1)[1]
-                # n_correct += torch.sum(pred == masks).item()
-
-                for mask, pred in zip(masks, output):
-                    pred = (pred > 0.5).float()
-                    n_correct += F.cross_entropy(pred.unsqueeze(dim=0), true_mask.unsqueeze(dim=0)).item()
+                pred = torch.max(output, 1)[1]
+                n_correct += torch.sum(pred == masks).item()
 
                 pbar.update(imgs.shape[0])
         pbar.close()

@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import os
 import time
-
+from tqdm import tqdm
 
 class Remote(Dataset):
     def __init__(self):
@@ -26,6 +26,13 @@ class Remote(Dataset):
 
 if __name__ == '__main__':
     dataset = Remote()
-    train_loader = DataLoader(dataset=dataset, batch_size=3)
+    train_loader = DataLoader(dataset=dataset, batch_size=2)
+
+    print(len(train_loader))
+    pbar = tqdm(total=len(train_loader) * 2, desc='val', unit='img')
+
     for i, (img, mask) in enumerate(train_loader):
-        print(i, img.shape, mask.shape)
+        # print(i, img.shape, mask.shape)
+        time.sleep(0.1)
+        pbar.update(img.shape[0])
+    pbar.close()
