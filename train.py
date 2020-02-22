@@ -72,7 +72,7 @@ class Solver(object):
             n_correct += correct
 
             pbar.set_postfix(**{'train_loss': loss.item() / self.train_batch_size,
-                                'train_acc': correct / self.train_batch_size * 512 * 512})
+                                'train_acc': correct / (self.train_batch_size * 512 * 512)})
             pbar.update(imgs.shape[0])
         pbar.close()
         return loss_tol / len(self.train_loader), n_correct / n_total
