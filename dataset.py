@@ -20,13 +20,12 @@ class Remote(Dataset):
 
     def __getitem__(self, item):
         img = cv2.imread(self.make_path(self.img_dir, item)).reshape(3, 512, 512)
-        mask = cv2.imread(self.make_path(self.mask_dir, item)).reshape(3, 512, 512)
+        mask = cv2.imread(self.make_path(self.mask_dir, item), cv2.IMREAD_GRAYSCALE).reshape(512, 512)
         return torch.from_numpy(img), torch.from_numpy(mask)
 
 
 if __name__ == '__main__':
     dataset = Remote()
-    train_loader = DataLoader(dataset=dataset, batch_size=1)
-    print(len(train_loader))
+    train_loader = DataLoader(dataset=dataset, batch_size=3)
     for i, (img, mask) in enumerate(train_loader):
         print(i, img.shape, mask.shape)
