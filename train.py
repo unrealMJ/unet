@@ -48,8 +48,8 @@ class Solver(object):
             self.device = torch.device('cpu')
         self.model = UNet(n_channels=3, n_classes=11).to(self.device)
 
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
-        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[75, 150], gamma=0.5)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=1e-8)
+        # self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[75, 150], gamma=0.5)
         self.criterion = nn.CrossEntropyLoss().to(self.device)
 
     def train(self):
@@ -108,7 +108,7 @@ class Solver(object):
         try:
             for epoch in range(self.epochs):
                 train_result = self.train()
-                self.scheduler.step(epoch)
+                # self.scheduler.step(epoch)
                 val_result = self.val()
                 accuracy = max(accuracy, val_result[1])
                 print(f'epoch: {epoch} / {self.epochs} train_loss: {train_result[0]} train_acc: {train_result[1]} '
@@ -120,9 +120,9 @@ class Solver(object):
 
 def main():
     parser = argparse.ArgumentParser(description="cifar-10 with PyTorch")
-    parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+    parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
     parser.add_argument('--epoch', default=20, type=int, help='number of epochs tp train for')
-    parser.add_argument('--train_batch_size', default=2, type=int, help='training batch size')
+    parser.add_argument('--train_batch_size', default=1, type=int, help='training batch size')
     parser.add_argument('--val_batch_size', default=1, type=int, help='testing batch size')
     parser.add_argument('--cuda', default=torch.cuda.is_available(), type=bool, help='whether cuda is in use')
     args = parser.parse_args()
