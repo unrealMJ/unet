@@ -1,19 +1,16 @@
-import torch.optim as optim
-import torch.utils.data
+import argparse
+
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
-import torchvision
-from torchvision import transforms as transforms
-import numpy as np
-
-import argparse
+import torch.nn.functional as F
+import torch.optim as optim
+import torch.utils.data
+from torch.utils.data import DataLoader, random_split
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 from dataset import Remote
 from unet.unet_model import UNet
-
-from tqdm import tqdm
-from torch.utils.data import DataLoader, random_split
-from torch.utils.tensorboard import SummaryWriter
 
 
 class Solver(object):
@@ -38,7 +35,7 @@ class Solver(object):
         n_train = len(dataset) - n_val
         train, val = random_split(dataset, [n_train, n_val])
         self.train_loader = DataLoader(train, batch_size=self.train_batch_size, shuffle=True)
-        self.val_loader = DataLoader(val, batch_size=self.val_batch_size, shuffle=True)
+        self.val_loader = DataLoader(val, batch_size=self.val_batch_size, shuffle=False)
 
     def load_model(self):
         if self.cuda:
@@ -59,18 +56,18 @@ class Solver(object):
         n_correct = 0
         pbar = tqdm(total=len(self.train_loader), unit='img')
         for i, (imgs, masks) in enumerate(self.train_loader):
-            imgs, masks = imgs.to(self.device), masks.to(self.device)
-            self.optimizer.zero_grad()
-            imgs = imgs.float()
-            masks = masks.long()
+            imgs = imgs.to(device=self.device, dtype=torch.float32)
+            masks = masks.to(device=self.device, dtype=torch.long)
+
             output = self.model(imgs)
             loss = self.criterion(output, masks)
-            loss.backward()
-            self.optimizer.step()
             loss_tol += loss.item()
 
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
             pred = torch.max(output, 1)[1]
-            assert pred.shape == masks.shape, 'error'
             correct = torch.sum(pred == masks).item()
             n_correct += correct
 
@@ -85,18 +82,23 @@ class Solver(object):
         loss_tol = 0
         n_correct = 0
         n_total = len(self.val_loader) * 512 * 512
-        pbar = tqdm(total=len(self.val_loader), unit='img')
+        pbar = tqdm(total=len(self.val_loader), desc='val', unit='img')
         with torch.no_grad():
             for i, (imgs, masks) in enumerate(self.val_loader):
-                imgs, masks = imgs.to(self.device), masks.to(self.device)
-                imgs = imgs.float()
-                masks = masks.long()
+                imgs = imgs.to(device=self.device, dtype=torch.float32)
+                masks = masks.to(device=self.device, dtype=torch.long)
+
                 output = self.model(imgs)
                 loss = self.criterion(output, masks)
                 loss_tol += loss.item()
 
-                pred = torch.max(output, 1)[1]
-                n_correct += torch.sum(pred == masks).item()
+                # pred = torch.max(output, 1)[1]
+                # n_correct += torch.sum(pred == masks).item()
+
+                for mask, pred in zip(masks, output):
+                    pred = (pred > 0.5).float()
+                    n_correct += F.cross_entropy(pred.unsqueeze(dim=0), true_mask.unsqueeze(dim=0)).item()
+
                 pbar.update(imgs.shape[0])
         pbar.close()
         return loss_tol / len(self.val_loader), n_correct / n_total
@@ -105,17 +107,24 @@ class Solver(object):
         self.load_data()
         self.load_model()
         accuracy = 0
+        writer = SummaryWriter()
         try:
             for epoch in range(self.epochs):
                 train_result = self.train()
                 # self.scheduler.step(epoch)
                 val_result = self.val()
+                writer.add_scalar('Loss/train', train_result[0])
+                writer.add_scalar('Acc/train', train_result[1])
+                writer.add_scalar('Loss/val', val_result[0])
+                writer.add_scalar('Acc/val', val_result[1])
                 accuracy = max(accuracy, val_result[1])
-                print(f'epoch: {epoch} / {self.epochs} train_loss: {train_result[0]} train_acc: {train_result[1]} '
+                print(f'epoch: {epoch + 1} / {self.epochs} train_loss: {train_result[0]} train_acc: {train_result[1]} '
                       f'val_loss: {val_result[0]} val_acc: {val_result[1]}')
-
+            writer.close()
         except KeyboardInterrupt:
             torch.save(self.model.state_dict(), 'INTERRUPTED.pth')
+            writer.close()
+        torch.save(self.model.state_dict(), 'model.pth')
 
 
 def main():
