@@ -61,6 +61,7 @@ class Solver(object):
         for i, (imgs, masks) in enumerate(self.train_loader):
             imgs, masks = imgs.to(self.device), masks.to(self.device)
             self.optimizer.zero_grad()
+            imgs = imgs.float()
             output = self.model(imgs)
             loss = self.criterion(output, masks)
             loss.backward()

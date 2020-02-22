@@ -39,7 +39,7 @@ def get_key(value):
     return None
 
 
-index = 1
+index = 0
 
 
 def split(img, begin_x=0, begin_y=0, h=512, w=512, step=50):
