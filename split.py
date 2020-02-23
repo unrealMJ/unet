@@ -23,7 +23,7 @@ def make_path(item):
 
 
 def process(mask):
-    new_mask = np.zeros((mask.shape[0], mask.shape[1]))
+    new_mask = np.zeros((mask.shape[0], mask.shape[1]), dtype=np.uint8)
     for row in range(mask.shape[0]):
         for col in range(mask.shape[1]):
             new_mask[row][col] = get_key(mask[row][col])
