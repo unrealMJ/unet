@@ -52,9 +52,9 @@ class Solver(object):
     def train(self):
         self.model.train()
         loss_tol = 0
-        n_total = len(self.train_loader) * 512 * 512
+        n_total = len(self.train_loader) * 512 * 512 * self.train_batch_size
         n_correct = 0
-        pbar = tqdm(total=len(self.train_loader), unit='img')
+        pbar = tqdm(total=len(self.train_loader) * self.train_batch_size, unit='img')
         for i, (imgs, masks) in enumerate(self.train_loader):
             imgs = imgs.to(device=self.device, dtype=torch.float32)
             masks = masks.to(device=self.device, dtype=torch.long)
@@ -81,7 +81,7 @@ class Solver(object):
         self.model.eval()
         loss_tol = 0
         n_correct = 0
-        n_total = len(self.val_loader) * 512 * 512
+        n_total = len(self.val_loader) * 512 * 512 * self.val_batch_size
         pbar = tqdm(total=len(self.val_loader), desc='val', unit='img')
         with torch.no_grad():
             for i, (imgs, masks) in enumerate(self.val_loader):
@@ -109,10 +109,10 @@ class Solver(object):
                 train_result = self.train()
                 # self.scheduler.step(epoch)
                 val_result = self.val()
-                writer.add_scalar('Loss/train', train_result[0])
-                writer.add_scalar('Acc/train', train_result[1])
-                writer.add_scalar('Loss/val', val_result[0])
-                writer.add_scalar('Acc/val', val_result[1])
+                writer.add_scalar('Loss/train', train_result[0], epoch)
+                writer.add_scalar('Acc/train', train_result[1], epoch)
+                writer.add_scalar('Loss/val', val_result[0], epoch)
+                writer.add_scalar('Acc/val', val_result[1], epoch)
                 accuracy = max(accuracy, val_result[1])
                 print(f'epoch: {epoch + 1} / {self.epochs} train_loss: {train_result[0]} train_acc: {train_result[1]} '
                       f'val_loss: {val_result[0]} val_acc: {val_result[1]}')
@@ -127,7 +127,7 @@ def main():
     parser = argparse.ArgumentParser(description="cifar-10 with PyTorch")
     parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
     parser.add_argument('--epoch', default=20, type=int, help='number of epochs tp train for')
-    parser.add_argument('--train_batch_size', default=1, type=int, help='training batch size')
+    parser.add_argument('--train_batch_size', default=2, type=int, help='training batch size')
     parser.add_argument('--val_batch_size', default=1, type=int, help='testing batch size')
     parser.add_argument('--cuda', default=torch.cuda.is_available(), type=bool, help='whether cuda is in use')
     args = parser.parse_args()
